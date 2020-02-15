@@ -1,7 +1,7 @@
 # PropFonts
 Proportional fonts used in my gfx libraries
 
-Use OPTIMIZE_BIG_FONTS for higher rendering speed mainly for big fonts
+Use OPTIMIZE_BIG_FONTS flag for higher rendering speed mainly for big fonts
 
 If you find it useful and want to buy me a coffee or a beer:
 
