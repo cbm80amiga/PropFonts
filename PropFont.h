@@ -4,6 +4,13 @@
 #ifndef _PROP_FONT_H
 #define _PROP_FONT_H 
 
+// -------  CONFIG ---------
+// saves 370 bytes
+#define CONVERT_PL_CHARS   0
+// ~25% faster rendering of big fonts, but adds 500 bytes
+#define OPTIMIZE_BIG_FONTS 0
+// --------------------------
+
 #include <Arduino.h>
 
 #define ALIGN_LEFT    0

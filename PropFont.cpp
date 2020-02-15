@@ -41,7 +41,9 @@ void PropFont::setFont(const uint8_t* font)
 // ----------------------------------------------------------------
 int PropFont::charWidth(uint8_t c)
 {
+#if CONVERT_PL_CHARS==1
   c = convertPolish(c);
+#endif
   if(c<cfont.firstCh || c>cfont.lastCh)  return c==' ' ?  sx*cfont.wd/2 : 0;
   int ys8=(cfont.ht+7)/8;
   int idx = 4 + (c-cfont.firstCh)*(cfont.wd*ys8+1);
@@ -66,7 +68,9 @@ int PropFont::drawChar(int x0, int y0, unsigned char c)
   if(x0 >= scrWd || y0 >= scrHt || !cfont.font)  return 0;
   int fht8 = (cfont.ht + 7) / 8, wd, fwd = cfont.wd;
 
+#if CONVERT_PL_CHARS==1
   c = convertPolish(c);
+#endif
   if(c < cfont.firstCh || c > cfont.lastCh)  return c==' ' ?  1 + fwd/2 : 0;
 
   int x,y8,b,cdata = (c - cfont.firstCh) * (fwd*fht8+1) + 4;
@@ -93,16 +97,34 @@ int PropFont::drawChar(int x0, int y0, unsigned char c)
   for(x=0; x<wd; x++) {
     for(y8=0; y8<fht8; y8++) {
       d = pgm_read_byte(cfont.font+cdata+x*fht8+y8);
-      if(!d && fg==bg) continue;
       int lastbit = cfont.ht - y8 * 8;
       if(lastbit>8) lastbit = 8;
+#if OPTIMIZE_BIG_FONTS==1
+      if(d==0xff) { (*fillRectFun)(x0+x*sx, y0+(y8*8)*sy, sx,sy*8, fg); continue; }
+      if(lastbit==8) {
+        if(d==0) {
+          if(fg!=bg) (*fillRectFun)(x0+x*sx, y0+(y8*8)*sy, sx,sy*8, bg);
+          continue;
+        }
+        if(d==0xf0) {
+          if(fg!=bg) (*fillRectFun)(x0+x*sx, y0+(y8*8)*sy, sx,sy*4, bg);
+          (*fillRectFun)(x0+x*sx, y0+(y8*8+4)*sy, sx,sy*4, fg);
+           continue; 
+        }
+        if(d==0x0f) { 
+          (*fillRectFun)(x0+x*sx, y0+(y8*8)*sy, sx,sy*4, fg); 
+          if(fg!=bg) (*fillRectFun)(x0+x*sx, y0+(y8*8+4)*sy, sx,sy*4, bg);
+          continue; 
+        }
+      }
+#endif
       for(b=0; b<lastbit; b++) {
         if(d & 1) {
           if(sx==1 && sy==1) (*drawPixelFun)(x0+x, y0+y8*8+b, fg);
-          else                (*fillRectFun)(x0+x*sx, y0+(y8*8+b)*sy, sx,sy, fg);
+          else               (*fillRectFun)(x0+x*sx, y0+(y8*8+b)*sy, sx,sy, fg);
         } else if(fg!=bg) {
           if(sx==1 && sy==1) (*drawPixelFun)(x0+x, y0+y8*8+b, bg);
-          else                (*fillRectFun)(x0+x*sx, y0+(y8*8+b)*sy,  sx,sy, bg);
+          else               (*fillRectFun)(x0+x*sx, y0+(y8*8+b)*sy,  sx,sy, bg);
         }
         d>>=1;
       }
@@ -116,7 +138,7 @@ int PropFont::drawChar(int x0, int y0, unsigned char c)
 int PropFont::strWidth(char *str)
 {
   int wd = 0;
-  while (*str) { wd += charWidth(*str++); if(*str) wd+=spacing; }
+  while(*str) { wd += charWidth(*str++); if(*str) wd+=spacing; }
   return wd;
 }
 
